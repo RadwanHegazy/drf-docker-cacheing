@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from django.dispatch import receiver
 from django.db.models.signals import post_save
-
+import random
 
 class ProductModel (models.Model) : 
     title = models.CharField(max_length=200)
@@ -11,7 +11,7 @@ class ProductModel (models.Model) :
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     price = models.FloatField()
-    image = models.ImageField(upload_to='products-images/')
+    image = models.ImageField(upload_to='products-images/',null=True,blank=True)
     quantity = models.IntegerField()
 
     def __str__(self) : 
@@ -19,6 +19,15 @@ class ProductModel (models.Model) :
     
     class Meta:
         ordering = ('-created_at',)
+    
+    def test () : 
+        return ProductModel.objects.create(
+            title = f'Product {random.randrange(1,100)}',
+            description = f'Description For this product with random int ( {random.randrange(1,100)} )',
+            price = random.randrange(1,1000),
+            quantity = random.randrange(1,100),
+            # image = open('C:\\Users\\ELsawah\\Desktop\\Me\\download.jpg','rb')
+        )
 
 
 class CartModel (models.Model) : 

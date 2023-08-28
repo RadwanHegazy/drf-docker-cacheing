@@ -44,9 +44,43 @@ class Cart (generics.GenericAPIView, mixins.ListModelMixin,mixins.CreateModelMix
         return self.create(request)
 
 
-def order (request) :
-    return HttpResponse('Done') 
+
+class Order (generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin) :
+    queryset = models.Order
+    permission_classes = [permissions.IsAuthenticated]
+    authentication_classes = [authentication.TokenAuthentication]
+
+    def get ( self, request ) : 
+
+        user = request.user
+
+        self.orders = models.Order.objects.filter( user = user )
+        serializer = serializers.OrderSerializer( self.orders , many=True)
+
+        return Response(serializer.data,status=status.HTTP_200_OK)
 
 
+    def post (self, request) : 
 
+        user = request.user
+        addresse = request.POST['addresse']
+        
+        user_cart = models.CartModel.objects.filter( user = user )
+        total_price = sum([( i.product.price * i.quantity ) for i in user_cart])
+
+        order = models.Order.objects.create(
+            user = user,
+            addresse = addresse,
+            total_price = total_price,
+        )
+
+        
+        for cart in user_cart :order.products.add(cart.product)
+
+        order.save()
+        
+
+        serializer = serializers.OrderSerializer(order)
+
+        return Response( serializer.data, status=status.HTTP_201_CREATED )
 

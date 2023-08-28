@@ -11,5 +11,9 @@ urlpatterns = [
     path('<int:pk>/',views.ProductDetails.as_view()),
 
     # cart [ add and view ]
-    path('cart/',views.Cart.as_view())
+    path('cart/',views.Cart.as_view()),
+
+    
+    # order [ view and confirm ]
+    path('order/',views.Order.as_view()),
 ]
