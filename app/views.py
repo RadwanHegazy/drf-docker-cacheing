@@ -1,8 +1,11 @@
-from django.shortcuts import render, HttpResponse
-from rest_framework import decorators, generics, filters, status ,permissions, authentication, mixins
+from rest_framework import generics, filters, status ,permissions, authentication, mixins
 from . import serializers
 from . import models
 from rest_framework.response import Response
+from django.core.cache import cache
+from rest_framework import pagination
+
+
 
 class Products (generics.GenericAPIView, mixins.ListModelMixin) : 
     queryset = models.ProductModel.objects.all()
@@ -10,10 +13,42 @@ class Products (generics.GenericAPIView, mixins.ListModelMixin) :
     filter_backends = [filters.SearchFilter]
     search_fields = ['title']
     
+    
 
     def get (self, request) : 
-        return self.list(request)
+        
+        if cache.get('products') :
+            products = cache.get('products')
+            serializer = self.serializer_class(products, many=True)
+            return self.list(serializer.data)
 
+        else :
+            cache.set('products',models.ProductModel.objects.all())
+            return self.list(request)
+
+
+
+    def paginate_queryset(self,queryset):
+
+        if 'page' in self.request.GET : 
+            page_name = f'page={self.request.GET["page"]}'
+            
+            if cache.get(page_name) is not None: 
+                products = cache.get(page_name)
+                return super().paginate_queryset(queryset=products) 
+            else :
+                cache.set(page_name,queryset)
+                return super().paginate_queryset(queryset) 
+        else :
+            page_name = 'page=0'
+
+            if cache.get(page_name) is not None: 
+                return super().paginate_queryset(queryset=cache.get(page_name))
+            else : 
+                cache.set(page_name,queryset)
+                return super().paginate_queryset(queryset=queryset)
+            
+    
 class ProductDetails (generics.GenericAPIView, mixins.RetrieveModelMixin) : 
     queryset = models.ProductModel.objects.all()
     serializer_class = serializers.ProductSerializer
